@@ -1,0 +1,15 @@
+Host ${master_name}
+    HostName ${master_public_ip}
+    User root
+    IdentityFile ~/.ssh/id_hcloud
+    StrictHostKeyChecking no
+    UserKnownHostsFile /dev/null
+%{ for worker in workers ~}
+Host ${worker.name}
+    HostName ${worker.private_ip}
+    User root
+    IdentityFile ~/.ssh/id_hcloud
+    ProxyJump k8s-lab-master
+    StrictHostKeyChecking no
+    UserKnownHostsFile /dev/null
+%{ endfor ~}

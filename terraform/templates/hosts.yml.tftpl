@@ -1,0 +1,18 @@
+all:
+  children:
+    masters:
+      hosts:
+        ${master_name}:
+          ansible_host: "${master_public_ip}"
+          private_ip: "${master_private_ip}"
+    workers:
+      hosts:
+%{ for worker in workers ~}
+        ${worker.name}:
+          ansible_host: "${worker.public_ip}"
+          private_ip: "${worker.private_ip}"
+%{ endfor ~}
+    k8s:
+      children:
+        masters:
+        workers:

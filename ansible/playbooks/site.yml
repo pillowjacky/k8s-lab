@@ -1,0 +1,9 @@
+---
+# Full cluster bring-up
+# Usage:
+#   ansible-playbook playbooks/site.yml
+
+- import_playbook: 01-check-readiness.yml
+- import_playbook: 02-init-master-nodes.yml
+- import_playbook: 03-join-worker-nodes.yml
+- import_playbook: 04-install-cilium.yml

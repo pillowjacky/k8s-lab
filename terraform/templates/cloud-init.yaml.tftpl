@@ -1,0 +1,83 @@
+#cloud-config
+
+hostname: ${hostname}
+
+bootcmd:
+  # disable swap
+  - swapoff -a
+  - sed -i '/ swap / s/^\(.*\)$/#\1/g' /etc/fstab
+
+write_files:
+  # add hostnames to /etc/hosts
+  - path: /etc/hosts
+    append: true
+    content: |
+      10.0.1.10 ${cluster_name}-master
+      10.0.1.20 ${cluster_name}-worker-1
+      10.0.1.21 ${cluster_name}-worker-2
+
+  # load required kernel modules
+  - path: /etc/modules-load.d/k8s.conf
+    content: |
+      overlay
+      br_netfilter
+
+  # enable required sysctl parameters
+  - path: /etc/sysctl.d/k8s.conf
+    content: |
+      net.bridge.bridge-nf-call-iptables  = 1
+      net.bridge.bridge-nf-call-ip6tables = 1
+      net.ipv4.ip_forward                 = 1
+
+  # add --node-ip to kubelet args
+  - path: /etc/default/kubelet
+    content: |
+      KUBELET_EXTRA_ARGS=--node-ip=${node_ip}
+
+package_update: true
+package_upgrade: true
+packages:
+  - apt-transport-https
+  - ca-certificates
+  - curl
+  - gnupg
+  - mosh
+
+runcmd:
+  # load required kernel modules
+  - modprobe overlay
+  - modprobe br_netfilter
+
+  # apply sysctl
+  - sysctl --system
+
+  # set up apt keyrings
+  - mkdir -p /etc/apt/keyrings
+
+  # install containerd
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  - echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo $VERSION_CODENAME) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+  - apt-get update -y
+  - apt-get install -y containerd.io
+
+  - mkdir -p /etc/containerd
+  - containerd config default | tee /etc/containerd/config.toml
+  - sed -i 's/SystemdCgroup = false/SystemdCgroup = true/g' /etc/containerd/config.toml
+  - systemctl restart containerd
+  - systemctl enable containerd
+
+  # install kubeadm, kubectl, kubelet
+  - curl -fsSL https://pkgs.k8s.io/core:/stable:/v${k8s_version}/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+  - echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v${k8s_version}/deb/ /" | tee /etc/apt/sources.list.d/kubernetes.list > /dev/null
+  - apt-get update -y
+  - apt-get install -y kubeadm kubectl kubelet
+  - apt-mark hold kubeadm kubectl kubelet
+
+  # reload all unit files
+  - systemctl daemon-reload
+
+power_state:
+  mode: reboot
+  message: "Rebooting after cloud-init is finished"
+  timeout: 30
+  condition: true

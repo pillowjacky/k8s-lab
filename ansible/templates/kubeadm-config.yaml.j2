@@ -1,0 +1,25 @@
+# kubeadm configuration for Hetzner private-network lab
+# Usage:
+#   kubeadm init --config=/tmp/kubeadm-config.yaml --upload-certs
+
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: {{ master_node_ip }}
+skipPhases:
+  - addon/kube-proxy
+---
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: ClusterConfiguration
+kubernetesVersion: "v{{ k8s_full_version }}"
+controlPlaneEndpoint: "{{ master_node_ip }}:6443"
+networking:
+  podSubnet: "{{ pod_cidr }}"
+  serviceSubnet: "{{ service_cidr }}"
+apiServer:
+  certSANs:
+    - "{{ master_node_ip }}"
+    - "127.0.0.1"
+    - "localhost"
+proxy:
+  disabled: {{ kube_proxy_replacement | bool | lower }}

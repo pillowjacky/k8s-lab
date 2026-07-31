@@ -1,0 +1,15 @@
+---
+# kubernetes
+k8s_version: "1.34"
+k8s_full_version: "1.34.0"
+master_node_ip: "10.0.1.10"
+pod_cidr: "10.244.0.0/16"
+service_cidr: "10.96.0.0/12"
+
+# cilium
+cilium_version: "1.17.1"
+cilium_cli_version: "v0.16.24"
+kube_proxy_replacement: true
+enable_gateway_api: true
+enable_hubble: true
+enable_l2_announcements: true

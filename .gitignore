@@ -1,0 +1,15 @@
+# ansible
+**/inventory/*
+
+# mac
+.DS_Store
+
+# terraform
+**/.terraform/*
+*tfbackend*
+!*tfbackend.enc
+*tfplan*
+*tfstate*
+!*tfstate.enc
+*tfvars*
+!*tfvars.enc

@@ -1,0 +1,19 @@
+---
+- name: Check nodes readiness
+  hosts: k8s
+  gather_facts: false
+  tasks:
+    - name: Check SSH connection
+      ansible.builtin.wait_for_connection:
+        timeout: 600
+        delay: 10
+
+    - name: Check cloud-init status
+      ansible.builtin.command: cloud-init status --wait
+      register: cloud_init_status
+      changed_when: false
+
+    - name: Check SSH connection again in case of reboot
+      ansible.builtin.wait_for_connection:
+        timeout: 600
+        delay: 10
